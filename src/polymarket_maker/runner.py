@@ -1,3 +1,13 @@
+"""Runner du bot Polymarket (mode démo).
+
+Ce module fournit un point d'entrée simple pour exécuter une démo de market
+making avec un échange simulé. Il illustre un cycle basique:
+1. Mise à jour du mid simulé (`exchange.tick()`).
+2. Annulation des ordres ouverts et recalcul de quotes.
+3. Contrôles de risque élémentaires (inventaire/limites).
+4. Journalisation de l'état (mid, inventaire, cash, PnL, ordres ouverts).
+"""
+
 import argparse
 import time
 
@@ -9,6 +19,11 @@ from .risk import RiskManager
 
 
 def run_demo(duration_seconds: int = 30) -> None:
+    """Exécute la démo de market making sur échange mock.
+
+    Args:
+        duration_seconds: durée d'exécution de la démo en secondes.
+    """
     log = get_logger("runner-demo")
     cfg = load_config()
 
@@ -27,24 +42,34 @@ def run_demo(duration_seconds: int = 30) -> None:
         exchange.cancel_all()
 
         if risk.allow_new_quotes(exchange.inventory):
+            # Génération de quotes côté stratégie, ajustées par le risque
             quotes = strat.generate_quotes(mid, exchange.inventory)
             for q in quotes:
                 size = risk.clamp_size(q.size, exchange.inventory)
                 if size > 0:
                     exchange.place_order(q.side, q.price, size)
         else:
-            pass  # near/in limit, pause quoting
+            # Proche/en limite d'inventaire: suspendre le quoting
+            pass
 
         status = exchange.status()
         log.info(
             f"mid={status['mid']:.4f} inv={status['inventory']:.2f} cash={status['cash']:.2f} pnl={status['pnl']:.2f} open={status['open_orders']}"
         )
+        # Note: rechargement de la config à chaque loop pour permettre
+        # d'ajuster le refresh à chaud (approche simple pour la démo).
         time.sleep(load_config().refresh_seconds)
 
     log.info("Fin démo. État final: %s", exchange.status())
 
 
 def main():
+    """Point d'entrée CLI.
+
+    Options:
+        --demo: exécute la démo sur échange simulé.
+        --seconds: durée de la démo.
+    """
     parser = argparse.ArgumentParser(description="Polymarket Maker Runner")
     parser.add_argument("--demo", action="store_true", help="Run mock demo")
     parser.add_argument("--seconds", type=int, default=30, help="Demo duration")

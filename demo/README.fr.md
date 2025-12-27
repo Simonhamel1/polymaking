@@ -1,6 +1,6 @@
 # Démo du bot de market making
 
-Langues: [Français](README.fr.md) · [English](README.en.md)
+Langues: Français (ce document) · English ([README.en.md](README.en.md))
 
 Ce document montre comment exécuter la démo et à quoi ressemble la sortie.
 

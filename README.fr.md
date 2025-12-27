@@ -1,20 +1,20 @@
 # Polymarket Market Making Bot (Base)
 
-Langues: [Français](README.fr.md) · [English](README.en.md)
+Langues: Français (ce document) · English ([README.en.md](README.en.md))
 
 Cette base fournit une architecture concrète, une démo exécutable et les briques nécessaires pour développer un bot de market making sur Polymarket.
 
 ## Contenu
 
 - [src/polymarket_maker](src/polymarket_maker): Package Python du bot
-	- `config.py`: Chargement de configuration via variables d’environnement
-	- `utils/logger.py`: Logger configurable
-	- `exchange/polymarket_client.py`: Client API public + stubs trading
-	- `exchange/mock_exchange.py`: Échange simulé pour la démo
-	- `strategy/base.py`: Interface stratégie + structure de quote
-	- `strategy/constant_spread.py`: Stratégie à spread constant
-	- `risk.py`: Gestion simple des limites d’inventaire
-	- `runner.py`: Boucle principale; mode `--demo`
+  - `config.py`: Chargement de configuration via variables d’environnement
+  - `utils/logger.py`: Logger configurable
+  - `exchange/polymarket_client.py`: Client API public + stubs trading
+  - `exchange/mock_exchange.py`: Échange simulé pour la démo
+  - `strategy/base.py`: Interface stratégie + structure de quote
+  - `strategy/constant_spread.py`: Stratégie à spread constant
+  - `risk.py`: Gestion simple des limites d’inventaire
+  - `runner.py`: Boucle principale; mode `--demo`
 - [demo/run_demo.py](demo/run_demo.py): Lance la démo
 - [ARCHITECTURE.md](ARCHITECTURE.md): Détails de l’architecture
 - [requirements.txt](requirements.txt): Dépendances Python

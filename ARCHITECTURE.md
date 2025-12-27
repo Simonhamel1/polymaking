@@ -1,5 +1,7 @@
 # Architecture du bot de market making (base)
 
+Langues: Français (ce document) · English ([ARCHITECTURE.en.md](ARCHITECTURE.en.md))
+
 Ce projet propose une base modulaire et extensible pour un bot de market making sur Polymarket. Il comprend un échange simulé pour la démo et des interfaces prêtes pour l’intégration avec l’API CLOB privée de Polymarket.
 
 ## Composants
@@ -39,3 +41,47 @@ Ce projet propose une base modulaire et extensible pour un bot de market making 
 - Gestion des risques avancée (drawdown, max orders, cooldowns).
 - Backtesting sur données historisées.
 - Persistance (SQLite) des trades et états.
+
+## Lecture du code (guide rapide)
+
+- **`Quote`**: structure (côté stratégie) décrivant une proposition d’ordre
+  avec `side` (buy/sell), `price`, `size`.
+- **`Strategy`**: interface qui produit des quotes à partir du `mid_price`
+  et de l’`inventory`. Implémentation exemple: `ConstantSpreadStrategy`.
+- **`RiskManager`**: applique des règles simples (limite d’inventaire) pour
+  décider si on cote et pour ajuster la taille des ordres (`clamp_size`).
+- **`MockExchange`**: échange simulé (mid aléatoire borné, fills
+  probabilistes), maintient `inventory`, `cash`, et calcule le `pnl` M2M.
+- **`PolymarketClient`**: client public (REST) pour marchés; orderbook live
+  et trading à implémenter via CLOB WebSocket/privé.
+- **`runner.py`**: point d’entrée de la démo; boucle qui met à jour le mid,
+  annule/remplace, génère/cote des quotes, et log l’état.
+
+Chemin de lecture recommandé:
+1. `runner.py` (vision d’ensemble de la boucle).
+2. `exchange/mock_exchange.py` (mid et fills simulés).
+3. `strategy/constant_spread.py` et `strategy/base.py` (quotes).
+4. `risk.py` (limites d’inventaire).
+5. `exchange/polymarket_client.py` (intégration REST et TODO CLOB).
+
+## Reading the code (quick guide)
+
+- **`Quote`**: strategy-side structure describing a limit order proposal with
+  `side` (buy/sell), `price`, `size`.
+- **`Strategy`**: interface producing quotes from `mid_price` and `inventory`.
+  Example implementation: `ConstantSpreadStrategy`.
+- **`RiskManager`**: applies simple rules (inventory limit) to decide whether
+  to quote and to adjust order size (`clamp_size`).
+- **`MockExchange`**: simulated exchange (bounded random mid, probabilistic
+  fills), maintains `inventory`, `cash`, and computes mark-to-market `pnl`.
+- **`PolymarketClient`**: public (REST) client for markets; live order book
+  and trading to be implemented via CLOB WebSocket/private.
+- **`runner.py`**: demo entry-point; loop that updates mid, cancels/replaces,
+  generates/quotes, and logs the state.
+
+Suggested reading path:
+1. `runner.py` (overall loop view).
+2. `exchange/mock_exchange.py` (simulated mid and fills).
+3. `strategy/constant_spread.py` and `strategy/base.py` (quotes).
+4. `risk.py` (inventory limits).
+5. `exchange/polymarket_client.py` (REST integration and CLOB TODO).
