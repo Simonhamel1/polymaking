@@ -67,4 +67,5 @@ LOG_LEVEL=INFO
 
 Pour l’architecture détaillée et les pistes d’évolution, consultez [ARCHITECTURE.md](ARCHITECTURE.md).
 
-# polymaking
+## Licence
+MIT License. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
