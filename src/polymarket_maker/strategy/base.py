@@ -8,17 +8,19 @@ et retourner une liste de `Quote` pertinentes.
 from dataclasses import dataclass
 from typing import List
 
+from ..constants import Side
+
 
 @dataclass
 class Quote:
     """Une proposition d'ordre limite.
 
     Champs:
-    - side: "buy" (bid) ou "sell" (ask).
+    - side: Side.BUY ou Side.SELL.
     - price: prix limite proposé.
     - size: quantité souhaitée.
     """
-    side: str  # "buy" or "sell"
+    side: Side
     price: float
     size: float
 

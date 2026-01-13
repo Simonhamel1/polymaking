@@ -1,5 +1,6 @@
 from typing import List
 
+from ..constants import Side
 from .base import Quote, Strategy
 
 
@@ -24,6 +25,6 @@ class ConstantSpreadStrategy(Strategy):
         bid = max(0.01, mid_price * (1.0 - self.spread))
         ask = min(0.99, mid_price * (1.0 + self.spread))
         return [
-            Quote("buy", round(bid, 4), self.size),
-            Quote("sell", round(ask, 4), self.size),
+            Quote(Side.BUY, round(bid, 4), self.size),
+            Quote(Side.SELL, round(ask, 4), self.size),
         ]

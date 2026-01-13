@@ -1,84 +1,56 @@
-"""Runner du bot Polymarket (mode démo).
+"""Runner principal de l'application.
 
-Ce module fournit un point d'entrée simple pour exécuter une démo de market
-making avec un échange simulé. Il illustre un cycle basique:
-1. Mise à jour du mid simulé (`exchange.tick()`).
-2. Annulation des ordres ouverts et recalcul de quotes.
-3. Contrôles de risque élémentaires (inventaire/limites).
-4. Journalisation de l'état (mid, inventaire, cash, PnL, ordres ouverts).
+Point d'entrée pour lancer le bot. Charge la configuration, initialise
+les composants (Exchange, Strategy, Risk) et lance le moteur (Bot).
 """
 
 import argparse
-import time
+import sys
 
 from .config import load_config
-from .utils.logger import get_logger
 from .exchange.mock_exchange import MockExchange
 from .strategy.constant_spread import ConstantSpreadStrategy
 from .risk import RiskManager
+from .bot import MarketMakerBot
+from .utils.logger import get_logger
 
+def main():
+    """Point d'entrée CLI."""
+    parser = argparse.ArgumentParser(description="Polymarket Maker Bot")
+    parser.add_argument("--demo", action="store_true", help="Force mock demo mode")
+    parser.add_argument("--seconds", type=int, default=30, help="Demo duration in seconds")
+    args = parser.parse_args()
 
-def run_demo(duration_seconds: int = 30) -> None:
-    """Exécute la démo de market making sur échange mock.
+    # Chargement de la config
+    try:
+        cfg = load_config()
+    except Exception as e:
+        print(f"Erreur de chargement config: {e}")
+        sys.exit(1)
 
-    Args:
-        duration_seconds: durée d'exécution de la démo en secondes.
-    """
-    log = get_logger("runner-demo")
-    cfg = load_config()
+    log = get_logger("main")
 
-    exchange = MockExchange(start_mid=0.5, volatility=0.01)
+    # 1. Initialisation de l'Exchange
+    # Priorité au flag --demo, sinon config.use_mock
+    if args.demo or cfg.use_mock:
+        log.info("Mode Mock activé.")
+        exchange = MockExchange(start_mid=0.5)
+    else:
+        # TODO: Implémenter l'adaptateur pour le vrai client Polymarket
+        log.error("Le mode Live (Real Exchange) n'est pas encore implémenté.")
+        sys.exit(1)
+
+    # 2. Initialisation Stratégie & Risque
     strat = ConstantSpreadStrategy(spread_bps=cfg.spread_bps, quote_size=cfg.quote_size)
     risk = RiskManager(inventory_limit=cfg.inventory_limit)
 
-    log.info("Démarrage démo market making (mock exchange)")
-    t0 = time.time()
-    while time.time() - t0 < duration_seconds:
-        # Mise à jour du prix simulé et éventuels fills
-        exchange.tick()
-        mid = exchange.get_mid_price()
-
-        # Cancel/Replace quote style minimal
-        exchange.cancel_all()
-
-        if risk.allow_new_quotes(exchange.inventory):
-            # Génération de quotes côté stratégie, ajustées par le risque
-            quotes = strat.generate_quotes(mid, exchange.inventory)
-            for q in quotes:
-                size = risk.clamp_size(q.size, exchange.inventory)
-                if size > 0:
-                    exchange.place_order(q.side, q.price, size)
-        else:
-            # Proche/en limite d'inventaire: suspendre le quoting
-            pass
-
-        status = exchange.status()
-        log.info(
-            f"mid={status['mid']:.4f} inv={status['inventory']:.2f} cash={status['cash']:.2f} pnl={status['pnl']:.2f} open={status['open_orders']}"
-        )
-        # Note: rechargement de la config à chaque loop pour permettre
-        # d'ajuster le refresh à chaud (approche simple pour la démo).
-        time.sleep(load_config().refresh_seconds)
-
-    log.info("Fin démo. État final: %s", exchange.status())
-
-
-def main():
-    """Point d'entrée CLI.
-
-    Options:
-        --demo: exécute la démo sur échange simulé.
-        --seconds: durée de la démo.
-    """
-    parser = argparse.ArgumentParser(description="Polymarket Maker Runner")
-    parser.add_argument("--demo", action="store_true", help="Run mock demo")
-    parser.add_argument("--seconds", type=int, default=30, help="Demo duration")
-    args = parser.parse_args()
-
-    if args.demo:
-        run_demo(args.seconds)
-    else:
-        raise SystemExit("Seul le mode --demo est implémenté dans cette base.")
+    # 3. Création et lancement du Bot
+    bot = MarketMakerBot(exchange, strat, risk, cfg)
+    
+    # Si --demo ou use_mock est activé, on peut vouloir une durée limite par défaut
+    duration = args.seconds if args.demo else None
+    
+    bot.run(duration=duration)
 
 
 if __name__ == "__main__":
